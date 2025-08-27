@@ -4,10 +4,14 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 
-class addstudent extends Model
+class AddStudent extends Model
 {
- 
-     public $timestamps = false; 
+    public $timestamps = false;
     protected $table = 'students';
-    protected $fillable = ['name', 'class', 'number', 'age','password','status'];
+    protected $fillable = ['name', 'email', 'class', 'number', 'age', 'password'];
+
+    public function teachers()
+    {
+        return $this->belongsToMany(\App\Models\Teacher::class, 'student_teacher', 'student_id', 'teacher_id');
+    }
 }

@@ -2,32 +2,50 @@
 
 namespace App\Http\Controllers;
 use Illuminate\Http\Request;
-use App\Models\addstudent;
+use App\Models\AddStudent;
 class AddstdController  extends Controller
 {
     
     public function create()
     {
-        if (!\Session::get('is_admin') || !\Session::get('admin_logged_in')) {
-            // If accessed directly or session expired, redirect to login
-            return redirect('/login')->with('error', 'You cannot add a student directly. Please login as admin.');
-        }
         return view('students.addstudent');
     }
     public function add(Request $request)
     {
-        if (!\Session::get('is_admin') || !\Session::get('admin_logged_in')) {
-            return redirect('/login')->with('error', 'You cannot add a student directly. Please login as admin.');
-        }
+        // Admin access is handled by middleware
         $data = $request->validate([
             'name' => 'required|string',
-            'class' => 'required|string',
+            'class' => 'required|integer',
             'number' => 'required|string',
+            'email' => 'required|email',
             'age' => 'required|integer',
             'password' => 'required|string',
         ]);
-        addStudent::create($data);
-        return redirect('/dashboard')->with('success', 'Student added successfully!');
+        $data['password'] = bcrypt($data['password']);
+        $student = AddStudent::create($data);
+
+        // Also create a user in the users table
+        \App\Models\User::create([
+            'name' => $data['name'],
+            'email' => $data['email'],
+            'password' => $data['password'],
+        ]);
+
+        // Redirect back to the form with a success message (refreshes form)
+        return redirect()->back()->with('success', 'Student added successfully!');
+    }
+
+    public function addCollege(Request $request)
+    {
+        $data = $request->validate([
+            'std_id' => 'required|exists:students,id',
+            'name' => 'required|string',
+            'branch' => 'required|string',
+            'passoutyear' => 'required|digits:4|integer',
+            // 'feestatus' => 'required|string',
+        ]);
+        \App\Models\College::create($data);
+        return redirect('/courses/create')->with('success', 'Student and college information added successfully!');
     }
 }
 

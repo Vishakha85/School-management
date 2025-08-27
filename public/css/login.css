@@ -36,7 +36,9 @@ label {
 }
 
 input[type="text"],
-input[type="password"] {
+input[type="password"],
+input[type="number"],
+.input-field {
     width: 100%;
     padding: 10px;
     margin-bottom: 20px;

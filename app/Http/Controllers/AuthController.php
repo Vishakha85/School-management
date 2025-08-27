@@ -1,144 +1,163 @@
 <?php
 
 namespace App\Http\Controllers;
-use App\Models\Student;
-use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Session;
 
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
+use App\Models\User;
+use App\Models\Teacher;
+
+use App\Jobs\DeliverAssignmentsToStudents;
 
 class AuthController extends Controller
 {
-    
     public function redirectToLogin()
-    {
-        return redirect('/login');
-    }
-
-
+{
+    return redirect()->route('login');
+}
     public function showLoginForm()
     {
-        return view('login'); 
+        return view('login');
     }
 
-    // public function login(Request $request)
-    // {
-      
-    //     $defaultUsername = 'admin';
-    //     $defaultPassword = 'password123';
-
-    //     $request->validate([
-    //         'username' => 'required',
-    //         'password' => 'required',
-    //     ]);
-
-    //     if ($request->username === $defaultUsername && $request->password === $defaultPassword) {
-    //         Session::put('admin_logged_in', true);
-    //         Session::put('username', $request->username);
-
-    //       return redirect('/dashboard'); 
-    //     }
-
-    //     return redirect('/login')
-    //         ->withErrors(['login_error' => 'Invalid username or password.'])
-    //         ->withInput();
-    // }
-
-   public function login(Request $request)
-{
-    $request->validate([
-        'username' => 'required',
-        'password' => 'required',
-        'role' => 'required|in:admin,student',
-    ]);
-
-    $role = $request->input('role');
-    $username = $request->input('username'); 
-    $password = $request->input('password');
-
-    // Prevent admin and student from logging in at the same time in the same browser
-    if (Session::get('admin_logged_in') && $role === 'student') {
-        return redirect('/login')->with('error', 'Please logout as admin before logging in as student.');
-    }
-    if (Session::get('student_logged_in') && $role === 'admin') {
-        return redirect('/login')->with('error', 'Please logout as student before logging in as admin.');
-    }
-
-    // Admin login
-    if ($role === 'admin') {
-        $defaultUsername = 'admin';
-        $defaultPassword = 'password123';
-
-        if ($username === $defaultUsername && $password === $defaultPassword) {
-            Session::put('admin_logged_in', true);
-            Session::put('username', $username);
-            Session::put('role', 'admin');
-            Session::put('is_admin', true); // Set is_admin for blade and middleware
-
-            return redirect('/dashboard');
-        } else {
-            return redirect('/login')
-                ->withErrors(['login_error' => 'Invalid admin credentials.'])
-                ->withInput();
-        }
-    }
-
-    if ($role === 'student') {
-        $student = Student::where('name', $username)->where('password', $password)->first();
-
-        if ($student) {
-              $student->status = 'Active';
-               $student->save();
-            Session::put('student_logged_in', true);
-            Session::put('name', $student->name);
-            Session::put('id', $student->id);
-            Session::put('role', 'student');
-
-            return redirect('/students/studentdash');
-        } else {
-            return redirect('/login')
-                ->withErrors(['login_error' => 'Invalid student credentials.'])
-                ->withInput();
-        }
-    }
-
-    return redirect('/login')
-        ->withErrors(['login_error' => 'Invalid role selection.'])
-        ->withInput();
-}
-    public function dashboard()
+    public function login(Request $request)
     {
-        if (!Session::get('admin_logged_in')) {
-            return redirect('/login')->withErrors(['login_error' => 'You need to log in first.']);
+        $request->validate([
+            'username' => 'required',
+            'password' => 'required',
+        ]);
+
+        $credentials = [
+            'name' => $request->input('username'),
+            'password' => $request->input('password'),
+        ];
+
+        if (Auth::attempt($credentials)) {
+            $user = Auth::user();
+
+            if ($request->expectsJson()) {
+                $token = $user->createToken('auth_token', ['*'], now()->addDays(7))->plainTextToken;
+
+                return response()->json([
+                    'access_token' => $token,
+                    'token_type' => 'Bearer',
+                    'user' => $user,
+                    'role' => $user->getRoleNames()->first(),
+                ]);
+            }
+
+            if ($user->hasRole('admin')) {
+                return redirect('/dashboard');
+            } elseif ($user->hasRole('student')) {
+                return redirect()->route('student.studentdash');
+            } elseif ($user->hasRole('teacher')) {
+                return redirect()->route('teacher.panel', ['id' => $user->id]);
+            }
+
+            Auth::logout();
+            return redirect('/login')->withErrors(['error' => 'Unauthorized role.']);
         }
-        
-       $students = Student::paginate(5); 
-        return view('dashboard', compact('students'));
+
+        return back()->withErrors([
+            'username' => 'Invalid credentials.',
+        ]);
     }
 
     public function logout()
     {
-       
-        Session::flush(); 
-
+        if (Auth::check()) {
+            Auth::logout();
+        }
         return redirect('/login');
     }
-     public function logoutstd()
-    {
-       
-       if (Session::get('role') === 'student') {
-        $studentId = Session::get('id');
 
-        if ($studentId) {
-            $student = Student::find($studentId);
-
-            if ($student) {
-                $student->status = 'Inactive';
-                $student->save();           
-            }
-
-             
-        }
+ 
+   public function loginAsStudent($id)
+{
+    if (!Auth::check() || !Auth::user()->hasRole('admin')) {
+        abort(403, 'Unauthorized');
     }
-return redirect('/login');
+    $user = \App\Models\User::findOrFail($id);
+
+    if (!$user->hasRole('student')) {
+        return redirect()->back()->withErrors(['error' => 'User is not a student.']);
+    }
+    $student = \App\Models\Student::where('email', $user->email)->first();
+
+    if (!$student) {
+        return redirect()->back()->withErrors(['error' => 'Student record not found for this user.']);
+    }
+    session(['impersonated_by' => Auth::id()]);
+    Auth::login($user);
+    $student->status = 'Active';
+    $student->save();
+
+    return redirect()->route('student.studentdash')->with('success', 'Now logged in as student.');
 }
+
+public function revertLogin()
+{
+    $adminId = session('impersonated_by');
+
+    if (!$adminId) {
+        return redirect('/login')->withErrors(['error' => 'No impersonation session found.']);
+    }
+    $admin = \App\Models\User::find($adminId);
+
+    if (!$admin || !$admin->hasRole('admin')) {
+        return redirect('/login')->withErrors(['error' => 'Original admin user not found or no longer has admin privileges.']);
+    }
+
+    Auth::logout();
+
+    session()->forget('impersonated_by');
+    Auth::login($admin);
+    $admin->load('roles', 'permissions');
+
+    return redirect('/dashboard')->with('success', 'Returned to admin account.');
+}
+
+
+    public function loginAsTeacher($id)
+{
+ 
+    if (!Auth::check() || !Auth::user()->hasRole('admin')) {
+        abort(403, 'Unauthorized');
+    }
+    $teacher = \App\Models\Teacher::findOrFail($id);
+    $user = \App\Models\User::where('email', $teacher->email)->first();
+    if (!$user) {
+        return back()->with('error', 'No user account found for this teacher.');
+    }
+  session(['impersonated_by' => Auth::id()]);
+    Auth::login($user);
+return redirect()->route('teacher.panel', ['id' => $teacher->id]);
+}
+
+// public function returnLogin()
+// {
+//     $adminId = session('impersonated_by');
+//     if (!$adminId) {
+//         return redirect()->route('login')->with('error', 'No admin session found.');
+//     }
+//     $admin = \App\Models\User::find($adminId);
+//     if (!$admin || !$admin->hasRole('admin')) {
+//         session()->forget('impersonated_by');
+//         return redirect()->route('login')->with('error', 'Admin user not found or no longer has admin privileges.');
+//     }
+//     session()->forget('impersonated_by');
+//     Auth::login($admin);
+//     return redirect('/dashboard')->with('success', 'Successfully returned to admin dashboard.');
+// }
+
+
+    public function dispatchAssignmentJob(Request $request)
+    {
+        DeliverAssignmentsToStudents::dispatch();
+
+        return response()->json([
+            'message' => "Assignment delivery job has been dispatched."
+        ]);
+    }
+
 }

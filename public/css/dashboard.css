@@ -1,3 +1,45 @@
+/* Dashboard Search Bar Styling */
+.dashboard-search-form {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 20px;
+}
+.dashboard-search-form input[type="text"] {
+    padding: 8px 14px;
+    border-radius: 6px;
+    border: 1px solid #bdbdbd;
+    font-size: 1em;
+    width: 260px;
+    background: #f7f7f7;
+    transition: border-color 0.2s;
+}
+.dashboard-search-form input[type="text"]:focus {
+    border-color:  #3498db;
+    outline: none;
+}
+.dashboard-search-form button[type="submit"] {
+    padding: 8px 18px;
+    border-radius: 6px;
+    border: none;
+    background: #1976d2;
+    color: #fff;
+    font-size: 1em;
+    cursor: pointer;
+    font-weight: 500;
+    transition: background 0.2s;
+}
+.dashboard-search-form button[type="submit"]:hover {
+    background: #115293;
+}
+/* Dashboard action buttons row */
+.dashboard-actions {
+    display: flex;
+    flex-direction: row;
+    gap: 18px;
+    margin: 24px 0 16px 0;
+    align-items: center;
+}
 body, h2, p, table {
     margin: 0;
     padding: 0;
@@ -26,12 +68,15 @@ table {
     border-collapse: collapse;
     background-color: #fff;
     box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+    table-layout: fixed;
 }
 
 th, td {
     text-align: left;
     padding: 12px 15px;
     border-bottom: 1px solid #ddd;
+    width: 11%;
+    word-break: break-word;
 }
 
 th {
@@ -113,4 +158,8 @@ a:hover { background-color: #2980b9; }
 
 .btn-delete:hover {
     background-color: #c0392b;  /* Darker red on hover */
+}
+
+th:nth-child(8), td:nth-child(8) {
+    width: 18%;
 }

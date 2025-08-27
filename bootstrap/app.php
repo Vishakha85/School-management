@@ -11,10 +11,16 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware): void {
-      
-        $middleware->alias([
-            'admin' => \App\Http\Middleware\AdminMiddleware::class,
-        ]);
+          $middleware->append([
+        \App\Http\Middleware\UpdateLastUsedToken::class, 
+    ]);
+      $middleware->alias([
+          'admin' => \App\Http\Middleware\AdminMiddleware::class,
+          'student' => \App\Http\Middleware\StudentMiddleware::class,
+          'teacher' => \App\Http\Middleware\TeacherMiddleware::class,
+          'role' => \Spatie\Permission\Middleware\RoleMiddleware::class,
+           'impersonate' => \App\Http\Middleware\ImpersonateMiddleware::class,
+      ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         //

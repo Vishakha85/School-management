@@ -7,7 +7,7 @@
     <link rel="stylesheet" href="{{ asset('css/login.css') }}">
 </head>
 <body>
-    <form action="{{ url('students') }}" method="POST">
+    <form action="{{ url('students') }}" method="POST" enctype="multipart/form-data">
         <h2>Signup Form For Students</h2>
     
         @if(session('success'))
@@ -18,44 +18,48 @@
         @csrf
         <div>
             <label for="name">Name:</label>
-            <input type="text" id="name" name="name" value="{{ old('name') }}">
-            @error('name')
-                <div style="color: red;">{{ $message }}</div>
-            @enderror
+            <input type="text" id="name" name="name" value="{{ old('name') }}" required>
         </div>
 
         <div>
             <label for="class">Class:</label>
-            <input type="text" id="class" name="class" value="{{ old('class') }}">
-            @error('class')
-                <div style="color: red;">{{ $message }}</div>
-            @enderror
+            <select id="class" name="class" required>
+                <option value="">Select Class</option>
+                @if(isset($classes))
+                    @foreach($classes as $class)
+                        <option value="{{ $class->id }}" {{ old('class') == $class->id ? 'selected' : '' }}>{{ $class->class }}</option>
+                    @endforeach
+                @endif
+            </select>
         </div>
 
         <div>
+            <label for="email">Email:</label>
+            <input type="email" id="email" name="email" value="{{ old('email') }}" required>
+        </div>
+        <div>
             <label for="number">Number:</label>
-            <input type="text" id="number" name="number" value="{{ old('number') }}">
-            @error('number')
-                <div style="color: red;">{{ $message }}</div>
-            @enderror
+            <input type="text" id="number" name="number" value="{{ old('number') }}" required>
         </div>
 
         <div>
             <label for="age">Age:</label>
-            <input type="text" id="age" name="age" value="{{ old('age') }}">
-            @error('age')
-                <div style="color: red;">{{ $message }}</div>
-            @enderror
+            <input type="text" id="age" name="age" value="{{ old('age') }}" required>
         </div>
 
         <br>
-         <div>
-            <label for="pass">Password:</label>
-            <input type="password" id="pass" name="password" value="{{ old('password') }}">
-            @error('password')
-                <div style="color: red;">{{ $message }}</div>
-            @enderror
+
+        <div>
+            <label for="image">Upload Image:</label>
+            <input type="file" id="image" name="image" accept="image/*" required>
         </div>
+
+        <div>
+            <label for="pass">Password:</label>
+            <input type="password" id="pass" name="password" value="{{ old('password') }}" required>
+        </div>
+        
+       <input type="hidden" name="role_id" value="{{ request('role_id') }}">
 
         <br>
         <button type="submit">Submit</button>

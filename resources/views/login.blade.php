@@ -3,13 +3,18 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Admin Login</title>
+    <title>Login</title>
      <link rel="stylesheet" href="{{ asset('css/login.css') }}">
 </head>
 
 <body>
     
     <form action="/login" method="POST">
+        @if(session('success'))
+            <div style="color: green; margin-bottom: 10px;">
+                {{ session('success') }}
+            </div>
+        @endif
         @if(session('error'))
             <div style="color: red; margin-bottom: 10px;">
                 {{ session('error') }}
@@ -33,19 +38,22 @@
         <div>
             <label for="password">Password</label>
             <input type="password" id="password" name="password">
+        <div style="text-align: right; margin-top: 4px;">
+            <a href="{{ route('password.request') }}" style="color: #1976d2; text-decoration: underline; font-size: 0.95rem;">Forgot Password?</a>
+        </div>
         </div>
 
-         <div>
+         <!-- <div>
         <label for="role">Login as</label>
         <select id="role" name="role" required>
             <option value="admin">Admin</option>
             <option value="student">Student</option>
         </select>
-    </div>
+    </div> -->
 
         <button type="submit">Login</button>
         <div >
-        <p>Don't have an account? <a href="{{ route('students.create') }}">Signup here</a></p>
+        <p>Don't have an account? <a href="{{ route('choose_user') }}">Signup here</a></p>
         </div>
     </form>
 

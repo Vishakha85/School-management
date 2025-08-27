@@ -1,0 +1,59 @@
+/* choose_user.css */
+.outer-card {
+    background: #fff;
+    border-radius: 16px;
+    box-shadow: 0 4px 24px rgba(0,0,0,0.14);
+    padding: 24px 24px 24px 24px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    min-width: 600px;
+    max-width: 900px;
+}
+.choose-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 80vh;
+}
+.images-row {
+    display: flex;
+    gap: 80px;
+    margin-bottom: 10px;
+}
+.images-row img {
+    width: 180px;
+    height: 180px;
+    object-fit: cover;
+    border-radius: 10px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+.buttons-row {
+    display: flex;
+    gap: 40px;
+    justify-content: center;
+    margin-top: 0px;
+    width: 100%;
+}
+.choose-btn {
+    padding: 12px 32px;
+    font-size: 1.1rem;
+    border: none;
+    border-radius: 6px;
+    background: linear-gradient(90deg, #bdbdbd 0%, #e0e0e0 100%);
+    color: #232526;
+    cursor: pointer;
+    transition: background 0.2s, box-shadow 0.2s;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.12);
+}
+.choose-btn.student {
+    margin-right: 50px;
+}
+.choose-btn.teacher {
+    margin-left: 40px;
+}
+.choose-btn:hover {
+    background: linear-gradient(90deg, #e0e0e0 0%, #bdbdbd 100%);
+    box-shadow: 0 4px 16px rgba(0,0,0,0.18);
+}
